@@ -45,10 +45,10 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func RemainHandler(w http.ResponseWriter, r *http.Request) {
-
+	remainTicket, totalUncon := ticket.GetRemainTicket(1)
 	remainData := ticket.TicketRemain{
-		Seats: []string{"A1", "A2"},
-		UnconfimedTicketsCount: 2,
+		Seats: remainTicket,
+		UnconfimedTicketsCount: totalUncon,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	b, err := json.Marshal(&remainData)
