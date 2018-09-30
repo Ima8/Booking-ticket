@@ -18,6 +18,14 @@ docker-compose up -d
       - round: Number (Round number of this ticket)
       - seat: string (seat of this ticket)
       - reserve_expired_time: number (Reservation expired time in timestamp)
+- POST: Confirm Ticket
+  - PATH
+    - /confirm
+  - Parameter
+    - seat
+  - Return
+    - status 200
+    
 - POST: Cancel Ticket /cancel
   - PATH
     - /cancel
