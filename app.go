@@ -7,20 +7,49 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
+	redisConnector "github.com/ima8/booking-ticket/model/redis"
+	"github.com/ima8/booking-ticket/model/ticket"
+	"github.com/spf13/viper"
 )
 
+var startTime time.Time
+var clientRedis *redis.Client
+var remainDB int
+
+func uptime() time.Duration {
+	return time.Since(startTime)
+}
+
+func loadConf() {
+	viper.SetConfigName("config")
+	viper.SetConfigType("json")
+	viper.AddConfigPath(".")
+	err := viper.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
+		panic(fmt.Errorf("\n Fatal error config file: %s ", err))
+	}
+	remainDB = viper.GetInt("remain_DB")
+}
+
+func init() {
+	startTime = time.Now()
+	loadConf()
+	clientRedis, _ = redisConnector.ConnectRedisServer(remainDB)
+}
+
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("hello world")
 	w.WriteHeader(http.StatusAccepted)
 	fmt.Fprintf(w, "URL.Path = %q\n", r.URL.Path)
 }
 
 func RemainHandler(w http.ResponseWriter, r *http.Request) {
-	type ticketRemain struct {
-		Remain int `json:"remain"`
+
+	remainData := ticket.TicketRemain{
+		Seats: []string{"A1", "A2"},
+		UnconfimedTicketsCount: 2,
 	}
-	remainData := ticketRemain{Remain: 1}
 	w.Header().Set("Content-Type", "application/json")
 	b, err := json.Marshal(&remainData)
 	if err != nil {
@@ -38,7 +67,7 @@ func main() {
 	fmt.Println("hello world")
 	r := mux.NewRouter().StrictSlash(true)
 	r.HandleFunc("/", HomeHandler).Methods("GET")
-	r.HandleFunc("/remain", RemainHandler).Methods("GET")
+	r.HandleFunc("/remaining", RemainHandler).Methods("GET")
 	r.HandleFunc("/book", BookHandler).Methods("POST")
 	srv := &http.Server{
 		Handler: r,
