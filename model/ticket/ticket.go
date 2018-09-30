@@ -2,7 +2,6 @@ package ticket
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -36,8 +35,6 @@ func GetRemainTicket(round int) ([]string, int) {
 	}
 
 	for i := 0; i < len(keys); i++ {
-		parts := strings.Split(keys[i], ":")
-		log.Println(parts[1])
 		totalUncon = totalUncon + 1
 	}
 	// Get all key that didn't book
@@ -47,7 +44,6 @@ func GetRemainTicket(round int) ([]string, int) {
 	}
 	for i := 0; i < len(keys); i++ {
 		parts := strings.Split(keys[i], ":")
-		log.Println(parts[1])
 		remainTicket = append(remainTicket, (parts[1]))
 		totalUncon = totalUncon + 1
 	}
