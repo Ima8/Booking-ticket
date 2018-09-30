@@ -3,6 +3,7 @@
 ## Setup env for dev
 ```
 docker-compose up -d 
+go run intalTicket/cmd/main.go // run this for inital ticket for testing
 ```
 
 ## Main function
