@@ -51,3 +51,12 @@ go run intalTicket/cmd/main.go // run this for inital ticket for testing
     - status 200
     - Field
       - bookings: string[]  (list of all booking)
+
+
+## TODO
+- Inital ticket  {DONE}
+- Get remain ticket {DONE}
+- Book seat 
+- Confirm Seat
+- Cancel Seat
+ 
