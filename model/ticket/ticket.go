@@ -67,17 +67,35 @@ func GetRemainTicket(round int) ([]string, int) {
 
 }
 
-func confirmTicket(seat string) bool {
+func ConfirmTicket(seat string) bool {
+	isConfirmTicketSuccess := false
 	clientRedis, _ = redisConnector.GetConnection(0)
 	currentRound := getCurrentRound()
 	if currentRound == 0 {
 		return false
 	}
-	// Check is it still have ticket left if not init the new round
-	if isRoundFull(currentRound) {
-		initalTicket.InitTicket(currentRound + 1)
+	isBooked, err := clientRedis.Exists("ru_" + strconv.Itoa(currentRound) + ":" + seat).Result()
+	if isBooked == 1 && err == nil {
+		status, err := clientRedis.RenameNX("ru_"+strconv.Itoa(currentRound)+":"+seat, "b_"+strconv.Itoa(currentRound)+":"+seat).Result()
+		log.Println(status)
+		log.Println(err)
+		if status == true && err == nil {
+			clientRedis.Del("r_" + strconv.Itoa(currentRound) + ":" + seat)
+			// Check is it still have ticket left if not init the new round
+			if isRoundFull(currentRound) {
+				initalTicket.InitTicket(currentRound + 1)
+			}
+			isConfirmTicketSuccess = true
+		} else {
+			log.Printf("Seat %s, Round %d:Someone Confirm before", seat, currentRound)
+			isConfirmTicketSuccess = false
+		}
+	} else {
+		log.Printf("Seat %s, Round %d:Didn't book yet", seat, currentRound)
+		isConfirmTicketSuccess = false
 	}
-	return false
+
+	return isConfirmTicketSuccess
 }
 
 // BookTicket is a function for booking the ticket of current round
