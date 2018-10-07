@@ -25,6 +25,11 @@ type ResponseTicket struct {
 	ReserveExiredTime string `json:"reservedExpiredTime"`
 }
 
+type ResponseWithAllTicket struct {
+	Success bool     `json:"success"`
+	Seat    []string `json:"seat"`
+}
+
 func uptime() time.Duration {
 	return time.Since(startTime)
 }
