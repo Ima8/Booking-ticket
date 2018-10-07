@@ -8,6 +8,8 @@ go run intalTicket/cmd/main.go // run this for inital ticket for testing
 
 ## Format Data 
 ```
+current_round : string
+ -- i.e. "1"
 r_{round}:{Seat} 
  -- The available seat .
 r_{round}_u:{Seat} 

@@ -37,9 +37,21 @@ func loadConf() {
 func init() {
 	startTime = time.Now()
 	loadConf()
+	clientRedis, _ = ConnectRedisServer(remainDB)
 }
 func main() {
 	clientRedis, _ = ConnectRedisServer(remainDB)
+}
+func GetConnection(redisDB int) (*redis.Client, error) {
+	pong, err := clientRedis.Ping().Result()
+	if pong == "PONG" && err == nil {
+		//log.Println("GetConnection redis: ", pong)
+		return clientRedis, nil
+	} else {
+		//log.Println("GetConnection redis: ", err)
+		time.Sleep(2 * time.Second)
+		return ConnectRedisServer(redisDB)
+	}
 }
 func ConnectRedisServer(redisDB int) (*redis.Client, error) {
 	serverRedises := serverRedisConfig
