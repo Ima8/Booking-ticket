@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
 	redisConnector "github.com/ima8/booking-ticket/model/redis"
 	"github.com/ima8/booking-ticket/model/ticket"
 	"github.com/spf13/viper"
@@ -44,6 +45,29 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "URL.Path = %q\n", r.URL.Path)
 }
 
+// BookHandler is API For booking the ticket
+func BookHandler(w http.ResponseWriter, r *http.Request) {
+	type requestData struct {
+		Seat string
+	}
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println("Error parsing form")
+	}
+	p := new(requestData)
+	decoder := schema.NewDecoder()
+	err = decoder.Decode(p, r.Form)
+	if err != nil {
+		fmt.Println("Error decoding")
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Missing parameter")
+		return
+	}
+	fmt.Println(p.Seat)
+	fmt.Fprintf(w, "URL.Path = %q\n", r.URL.Path)
+}
+
+// RemainHandler is API for get the remain ticket and number of unconfirm ticket
 func RemainHandler(w http.ResponseWriter, r *http.Request) {
 	remainTicket, totalUncon := ticket.GetRemainTicket(1)
 	remainData := ticket.TicketRemain{
@@ -57,10 +81,6 @@ func RemainHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintf(w, string(b))
-}
-
-func BookHandler(w http.ResponseWriter, r *http.Request) {
-
 }
 
 func main() {
