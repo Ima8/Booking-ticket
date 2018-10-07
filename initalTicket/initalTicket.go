@@ -23,8 +23,8 @@ func toCharStrArr(arr [26]string, i int) string {
 func InitTicket(round int) {
 	var arr = [...]string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
 		"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
-	for i := 1; i < 2; i++ {
-		for j := 1; j <= 2; j++ {
+	for i := 1; i < 10; i++ {
+		for j := 1; j <= 10; j++ {
 			var ticket = toCharStrArr(arr, i) + strconv.Itoa(j)
 			clientRedis.Set("r_"+strconv.Itoa(round)+":"+ticket, "", 10*time.Hour)
 		}

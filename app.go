@@ -173,8 +173,9 @@ func RemainHandler(w http.ResponseWriter, r *http.Request) {
 
 	remainTicket, totalUncon := ticket.GetRemainTicket(currentRound)
 	remainData := ticket.TicketRemain{
-		Seats: remainTicket,
 		UnconfimedTicketsCount: totalUncon,
+		Round: currentRound,
+		Seats: remainTicket,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	b, err := json.Marshal(&remainData)
@@ -208,7 +209,7 @@ func AllTicketHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 func main() {
-	fmt.Println("hello world")
+	fmt.Println("Server starting at :8000")
 	r := mux.NewRouter().StrictSlash(true)
 	r.HandleFunc("/", HomeHandler).Methods("GET")
 	r.HandleFunc("/remaining", RemainHandler).Methods("GET")

@@ -16,6 +16,7 @@ import (
 type TicketRemain struct {
 	Seats                  []string `json:"seats"`
 	UnconfimedTicketsCount int      `json:"unconfimedTicketsCount"`
+	Round                  int      `json:"round"`
 }
 
 var clientRedis *redis.Client
