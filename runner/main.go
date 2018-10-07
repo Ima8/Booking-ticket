@@ -42,7 +42,7 @@ func bookTicket(seat string) bool {
 	if err != nil {
 		log.Fatalln(err)
 	} else {
-		log.Println(seat)
+		//log.Println(seat)
 	}
 	return true
 }
@@ -53,7 +53,7 @@ func confirmTicket(seat string) bool {
 	if err != nil {
 		log.Fatalln(err)
 	} else {
-		log.Println(seat)
+		//log.Println(seat)
 	}
 	return true
 }
@@ -68,7 +68,7 @@ func bookTicketAndConfirm(seat string, wg *sync.WaitGroup) {
 }
 
 func startBookTicketAndConfirm(ch chan bool) {
-	if count >= 100 {
+	if count >= 1000 {
 		elapsed := time.Since(start)
 		log.Printf("Binomial took %s", elapsed)
 		ch <- true
