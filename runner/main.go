@@ -14,6 +14,8 @@ import (
 
 var baseAPI = "http://localhost:8000"
 var myClient = &http.Client{Timeout: 10 * time.Second}
+var count = 0
+var start = time.Now()
 
 func getJson(url string, target interface{}) error {
 	r, err := myClient.Get(url)
@@ -62,9 +64,15 @@ func bookTicketAndConfirm(seat string, wg *sync.WaitGroup) {
 	if status == true {
 		confirmTicket(seat)
 	}
+	count++
 }
 
-func startBookTicketAndConfirm() {
+func startBookTicketAndConfirm(ch chan bool) {
+	if count >= 100 {
+		elapsed := time.Since(start)
+		log.Printf("Binomial took %s", elapsed)
+		ch <- true
+	}
 	var wg sync.WaitGroup
 	seats := getRemainTicket()
 	wg.Add(len(seats))
@@ -72,10 +80,11 @@ func startBookTicketAndConfirm() {
 		go bookTicketAndConfirm(seat, &wg)
 	}
 	wg.Wait()
-	startBookTicketAndConfirm()
+
+	startBookTicketAndConfirm(ch)
 }
 func main() {
 	forever := make(chan bool)
-	startBookTicketAndConfirm()
+	startBookTicketAndConfirm(forever)
 	<-forever
 }
