@@ -19,6 +19,12 @@ var startTime time.Time
 var clientRedis *redis.Client
 var remainDB int
 
+type ResponseTicket struct {
+	Success           bool   `json:"success"`
+	Seat              string `json:"seat"`
+	ReserveExiredTime string `json:"reservedExpiredTime"`
+}
+
 func uptime() time.Duration {
 	return time.Since(startTime)
 }
@@ -65,12 +71,37 @@ func BookHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	isBook := ticket.BookTicket(p.Seat)
+	w.Header().Set("Content-Type", "application/json")
 	if isBook == true {
+		t := time.Now()
+		t = t.Add(10 * time.Second)
+		response := ResponseTicket{
+			Success:           true,
+			Seat:              p.Seat,
+			ReserveExiredTime: t.Format(time.RFC850),
+		}
+		b, err := json.Marshal(&response)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 		w.WriteHeader(http.StatusCreated)
-		fmt.Fprintf(w, "Booked Ticket: %s", p.Seat)
+		fmt.Fprintf(w, string(b))
+
 	} else {
+		response := ResponseTicket{
+			Success:           false,
+			Seat:              p.Seat,
+			ReserveExiredTime: "",
+		}
+		b, err := json.Marshal(&response)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 		w.WriteHeader(http.StatusConflict)
-		fmt.Fprintf(w, "Cannot Book Ticket: %s", p.Seat)
+		fmt.Fprintf(w, string(b))
+
 	}
 }
 
