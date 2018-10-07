@@ -20,12 +20,17 @@ func toCharStrArr(arr [26]string, i int) string {
 	return arr[i-1]
 }
 
+func InitTicket10Rounnd() {
+	for i := 1; i <= 10; i++ {
+		go InitTicket(i)
+	}
+}
 func InitTicket(round int) {
 	var arr = [...]string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
 		"N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
 	clientRedis.Set("current_round", strconv.Itoa(round), 10*time.Hour)
 	for i := 1; i < 10; i++ {
-		for j := 1; j <= 10; j++ {
+		for j := 1; j <= 100; j++ {
 			var ticket = toCharStrArr(arr, i) + strconv.Itoa(j)
 			clientRedis.Set("r_"+strconv.Itoa(round)+":"+ticket, "", 10*time.Hour)
 		}

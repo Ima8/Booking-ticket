@@ -5,5 +5,5 @@ import (
 )
 
 func main() {
-	initalTicket.InitTicket(1)
+	initalTicket.InitTicket10Rounnd()
 }

@@ -72,7 +72,7 @@ ru_{round}:{Seat}
 - Get all ticket {DONE}
 - Cancel Seat
 - Add test for all
-
+- Inital 5 round first to reduce lag of inital
 
 ## How to test
 1. docker-compose up
