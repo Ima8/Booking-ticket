@@ -25,6 +25,15 @@ type ResponseTicket struct {
 	ReserveExiredTime string `json:"reservedExpiredTime"`
 }
 
+type ResponseTicketWithoutReserveExiredTime struct {
+	Success bool   `json:"success"`
+	Seat    string `json:"seat"`
+}
+type ResponseWithAllTicket struct {
+	Success bool     `json:"success"`
+	Seat    []string `json:"seat"`
+}
+
 func uptime() time.Duration {
 	return time.Since(startTime)
 }
@@ -50,6 +59,54 @@ func init() {
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 	fmt.Fprintf(w, "URL.Path = %q\n", r.URL.Path)
+}
+
+func ConfirmHandler(w http.ResponseWriter, r *http.Request) {
+	type requestData struct {
+		Seat string
+	}
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println("Error parsing form")
+	}
+	p := new(requestData)
+	decoder := schema.NewDecoder()
+	err = decoder.Decode(p, r.Form)
+	if err != nil {
+		fmt.Println("Error decoding")
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintf(w, "Missing parameter")
+		return
+	}
+	isBook := ticket.ConfirmTicket(p.Seat)
+	w.Header().Set("Content-Type", "application/json")
+	if isBook == true {
+		response := ResponseTicketWithoutReserveExiredTime{
+			Success: true,
+			Seat:    p.Seat,
+		}
+		b, err := json.Marshal(&response)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprintf(w, string(b))
+
+	} else {
+		response := ResponseTicketWithoutReserveExiredTime{
+			Success: false,
+			Seat:    p.Seat,
+		}
+		b, err := json.Marshal(&response)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		w.WriteHeader(http.StatusConflict)
+		fmt.Fprintf(w, string(b))
+
+	}
 }
 
 // BookHandler is API For booking the ticket
@@ -127,6 +184,7 @@ func main() {
 	r.HandleFunc("/", HomeHandler).Methods("GET")
 	r.HandleFunc("/remaining", RemainHandler).Methods("GET")
 	r.HandleFunc("/book", BookHandler).Methods("POST")
+	r.HandleFunc("/confirm", ConfirmHandler).Methods("POST")
 	srv := &http.Server{
 		Handler: r,
 		Addr:    "127.0.0.1:8000",

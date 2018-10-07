@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Ima8/Booking-ticket/initalTicket"
 	"github.com/go-redis/redis"
 	redisConnector "github.com/ima8/booking-ticket/model/redis"
 )
@@ -31,6 +32,7 @@ func GetRemainTicket(round int) ([]string, int) {
 	var err error
 	var keys []string
 
+	var bookedTicket []string
 	// Get all key that booked but didn't confirm yet
 	if keys, _, err = clientRedis.Scan(0, "ru_"+strconv.Itoa(round)+":*", 1000).Result(); err != nil {
 		fmt.Println("ERROR: %s", err)
@@ -38,20 +40,62 @@ func GetRemainTicket(round int) ([]string, int) {
 	}
 
 	for i := 0; i < len(keys); i++ {
+		parts := strings.Split(keys[i], ":")
+		bookedTicket = append(bookedTicket, (parts[1]))
 		totalUncon = totalUncon + 1
 	}
-	// Get all key that didn't book
+	// Get all ticket that didn't confirm
 	if keys, _, err = clientRedis.Scan(0, "r_"+strconv.Itoa(round)+":*", 1000).Result(); err != nil {
 		fmt.Println("ERROR: %s", err)
 		os.Exit(2)
 	}
 	for i := 0; i < len(keys); i++ {
 		parts := strings.Split(keys[i], ":")
-		remainTicket = append(remainTicket, (parts[1]))
-		totalUncon = totalUncon + 1
+		isBooked := false
+		for i := range bookedTicket {
+			if bookedTicket[i] == parts[1] {
+				isBooked = true
+				break
+			}
+		}
+		if isBooked == false {
+			remainTicket = append(remainTicket, (parts[1]))
+			totalUncon = totalUncon + 1
+		}
 	}
 	return remainTicket, totalUncon
 
+}
+
+func ConfirmTicket(seat string) bool {
+	isConfirmTicketSuccess := false
+	clientRedis, _ = redisConnector.GetConnection(0)
+	currentRound := getCurrentRound()
+	if currentRound == 0 {
+		return false
+	}
+	isBooked, err := clientRedis.Exists("ru_" + strconv.Itoa(currentRound) + ":" + seat).Result()
+	if isBooked == 1 && err == nil {
+		status, err := clientRedis.RenameNX("ru_"+strconv.Itoa(currentRound)+":"+seat, "b_"+strconv.Itoa(currentRound)+":"+seat).Result()
+		log.Println(status)
+		log.Println(err)
+		if status == true && err == nil {
+			clientRedis.Del("r_" + strconv.Itoa(currentRound) + ":" + seat)
+			// Check is it still have ticket left if not init the new round
+			if isRoundFull(currentRound) {
+				initalTicket.InitTicket(currentRound + 1)
+			}
+			isConfirmTicketSuccess = true
+		} else {
+			log.Printf("Seat %s, Round %d:Someone Confirm before", seat, currentRound)
+			isConfirmTicketSuccess = false
+		}
+	} else {
+		log.Printf("Seat %s, Round %d:Didn't book yet", seat, currentRound)
+		isConfirmTicketSuccess = false
+	}
+
+	return isConfirmTicketSuccess
 }
 
 // BookTicket is a function for booking the ticket of current round
@@ -69,7 +113,6 @@ func BookTicket(seat string) bool {
 			return false
 		} else {
 			log.Println("Booked: " + seat)
-			// Check is it still have ticket left if not init the new round
 			return true
 		}
 	}
@@ -77,11 +120,13 @@ func BookTicket(seat string) bool {
 
 }
 
-// isRoundAvailable mean all ticket already booked, may have some not confirm yet
-func isRoundAvailable(round int) bool {
-	// clientRedis, _ = redisConnector.GetConnection(0)
-	// client
-	return false
+// isRoundFull mean all ticket already booked and confirm
+func isRoundFull(round int) bool {
+	_, unconfirmTicket := GetRemainTicket(round)
+	if unconfirmTicket > 0 {
+		return false
+	}
+	return true
 }
 
 func getCurrentRound() int {
@@ -98,12 +143,18 @@ func isTicketAvailable(currentRound int, s string) bool {
 	clientRedis, _ = redisConnector.GetConnection(0)
 	isAvailable, err := clientRedis.Exists("r_" + strconv.Itoa(currentRound) + ":" + s).Result()
 	isBooked, err2 := clientRedis.Exists("ru_" + strconv.Itoa(currentRound) + ":" + s).Result()
-	if isAvailable == 1 || err != nil || isBooked == 0 || err2 != nil {
+	// If ticket available and already booked
+	if isAvailable == 1 || err != nil {
+		if isBooked == 1 || err2 != nil {
+			log.Printf("Seat %s, Round %d:Already Book", s, currentRound)
+			return false
+		} else {
+			return true
+		}
+
+	} else {
 		log.Printf("Seat %s, Round %d:Not found", s, currentRound)
 		return false
-	}
-	if isAvailable == 1 && isBooked == 0 {
-		return true
 	}
 	return false
 }

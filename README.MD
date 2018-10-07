@@ -71,3 +71,7 @@ r_{round}_u:{Seat}
 - Confirm Seat
 - Cancel Seat
 - Add test for all
+
+
+## Use case
+- 1. If all ticket booked but didn't confirm yet not allow to book in the next round
