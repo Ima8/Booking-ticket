@@ -40,6 +40,7 @@ func init() {
 	clientRedis, _ = redisConnector.ConnectRedisServer(remainDB)
 }
 
+// HomeHandler is a health check api
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 	fmt.Fprintf(w, "URL.Path = %q\n", r.URL.Path)
@@ -63,9 +64,14 @@ func BookHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Missing parameter")
 		return
 	}
-	fmt.Println(p.Seat)
-	ticket.BookTicket(p.Seat)
-	fmt.Fprintf(w, "URL.Path = %q\n", r.URL.Path)
+	isBook := ticket.BookTicket(p.Seat)
+	if isBook == true {
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprintf(w, "Booked Ticket: %s", p.Seat)
+	} else {
+		w.WriteHeader(http.StatusConflict)
+		fmt.Fprintf(w, "Cannot Book Ticket: %s", p.Seat)
+	}
 }
 
 // RemainHandler is API for get the remain ticket and number of unconfirm ticket

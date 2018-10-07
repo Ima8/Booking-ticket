@@ -18,6 +18,7 @@ type TicketRemain struct {
 
 var clientRedis *redis.Client
 
+// GetRemainTicket is a function for get Remain Ticket of current round
 func GetRemainTicket(round int) ([]string, int) {
 	//defer clientRedis.Close()
 	var remainTicket []string
@@ -52,14 +53,28 @@ func GetRemainTicket(round int) ([]string, int) {
 
 }
 
+// BookTicket is a function for booking the ticket of current round
 func BookTicket(seat string) bool {
 	clientRedis, _ = redisConnector.GetConnection(0)
-	//
-	IsTicketAvailable(seat)
+	currentRound := getCurrentRound()
+	if currentRound == 0 {
+		return false
+	}
+	canBookTicket := isTicketAvailable(currentRound, seat)
+	if canBookTicket == true {
+		status, err := clientRedis.RenameNX("r_"+strconv.Itoa(currentRound)+":"+seat, "r_"+strconv.Itoa(currentRound)+"_u:"+seat).Result()
+		if status == false || err != nil {
+			return false
+		} else {
+			log.Println("Booked: " + seat)
+			return true
+		}
+	}
 	return false
+
 }
 
-func GetCurrentRound() int {
+func getCurrentRound() int {
 	clientRedis, _ = redisConnector.GetConnection(0)
 	round, _ := clientRedis.Get("current_round").Result()
 	var currentRound int
@@ -68,16 +83,16 @@ func GetCurrentRound() int {
 	}
 	return (currentRound)
 }
-func IsTicketAvailable(s string) bool {
+
+func isTicketAvailable(currentRound int, s string) bool {
 	clientRedis, _ = redisConnector.GetConnection(0)
-	currentRound := GetCurrentRound()
-	if currentRound == 0 {
-		return false
-	}
-	_, err := clientRedis.Get("r_1" + strconv.Itoa(currentRound) + ":" + s).Result()
-	if err != nil {
+	status, err := clientRedis.Exists("r_" + strconv.Itoa(currentRound) + ":" + s).Result()
+	if status == 0 || err != nil {
 		log.Printf("Seat %s, Round %d:Not found", s, currentRound)
 		return false
 	}
-	return true
+	if status == 1 {
+		return true
+	}
+	return false
 }
