@@ -26,7 +26,7 @@ func GetRemainTicket(round int) ([]string, int) {
 	var remainTicket []string
 	var totalUncon int = 0
 
-	clientRedis, _ = redisConnector.ConnectRedisServer(0)
+	clientRedis, _ = redisConnector.GetConnection(0)
 
 	// var cursor uint64
 	var err error
@@ -70,17 +70,15 @@ func GetRemainTicket(round int) ([]string, int) {
 func ConfirmTicket(seat string) bool {
 	isConfirmTicketSuccess := false
 	clientRedis, _ = redisConnector.GetConnection(0)
-	currentRound := getCurrentRound()
+	currentRound := GetCurrentRound()
 	if currentRound == 0 {
 		return false
 	}
 	isBooked, err := clientRedis.Exists("ru_" + strconv.Itoa(currentRound) + ":" + seat).Result()
 	if isBooked == 1 && err == nil {
-		status, err := clientRedis.RenameNX("ru_"+strconv.Itoa(currentRound)+":"+seat, "b_"+strconv.Itoa(currentRound)+":"+seat).Result()
-		log.Println(status)
-		log.Println(err)
+		status, err := clientRedis.RenameNX("r_"+strconv.Itoa(currentRound)+":"+seat, "b_"+strconv.Itoa(currentRound)+":"+seat).Result()
 		if status == true && err == nil {
-			clientRedis.Del("r_" + strconv.Itoa(currentRound) + ":" + seat)
+			clientRedis.Del("ru_" + strconv.Itoa(currentRound) + ":" + seat)
 			// Check is it still have ticket left if not init the new round
 			if isRoundFull(currentRound) {
 				initalTicket.InitTicket(currentRound + 1)
@@ -101,7 +99,7 @@ func ConfirmTicket(seat string) bool {
 // BookTicket is a function for booking the ticket of current round
 func BookTicket(seat string) bool {
 	clientRedis, _ = redisConnector.GetConnection(0)
-	currentRound := getCurrentRound()
+	currentRound := GetCurrentRound()
 	if currentRound == 0 {
 		return false
 	}
@@ -129,7 +127,7 @@ func isRoundFull(round int) bool {
 	return true
 }
 
-func getCurrentRound() int {
+func GetCurrentRound() int {
 	clientRedis, _ = redisConnector.GetConnection(0)
 	round, _ := clientRedis.Get("current_round").Result()
 	var currentRound int
@@ -139,6 +137,31 @@ func getCurrentRound() int {
 	return (currentRound)
 }
 
+func GetAllTicket() []string {
+	var tickets []string
+	clientRedis, _ = redisConnector.GetConnection(0)
+	currentRound := GetCurrentRound()
+	if currentRound == 0 {
+		return []string{}
+	}
+	for i := 1; i <= currentRound; i++ {
+		// var cursor uint64
+		var err error
+		var keys []string
+		strRound := strconv.Itoa(i)
+		if keys, _, err = clientRedis.Scan(0, "b_"+strRound+":*", 1000).Result(); err != nil {
+			fmt.Println("ERROR: %s", err)
+			os.Exit(2)
+		}
+
+		for i := 0; i < len(keys); i++ {
+			parts := strings.Split(keys[i], ":")
+			tickets = append(tickets, strRound+"-"+parts[1])
+		}
+	}
+
+	return tickets
+}
 func isTicketAvailable(currentRound int, s string) bool {
 	clientRedis, _ = redisConnector.GetConnection(0)
 	isAvailable, err := clientRedis.Exists("r_" + strconv.Itoa(currentRound) + ":" + s).Result()
@@ -156,5 +179,4 @@ func isTicketAvailable(currentRound int, s string) bool {
 		log.Printf("Seat %s, Round %d:Not found", s, currentRound)
 		return false
 	}
-	return false
 }

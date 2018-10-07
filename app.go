@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Ima8/Booking-ticket/initalTicket"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
@@ -31,7 +32,7 @@ type ResponseTicketWithoutReserveExiredTime struct {
 }
 type ResponseWithAllTicket struct {
 	Success bool     `json:"success"`
-	Seat    []string `json:"seat"`
+	Seats   []string `json:"seat"`
 }
 
 func uptime() time.Duration {
@@ -52,7 +53,7 @@ func loadConf() {
 func init() {
 	startTime = time.Now()
 	loadConf()
-	clientRedis, _ = redisConnector.ConnectRedisServer(remainDB)
+	clientRedis, _ = redisConnector.GetConnection(remainDB)
 }
 
 // HomeHandler is a health check api
@@ -164,7 +165,13 @@ func BookHandler(w http.ResponseWriter, r *http.Request) {
 
 // RemainHandler is API for get the remain ticket and number of unconfirm ticket
 func RemainHandler(w http.ResponseWriter, r *http.Request) {
-	remainTicket, totalUncon := ticket.GetRemainTicket(1)
+	currentRound := ticket.GetCurrentRound()
+	if currentRound == 0 {
+		fmt.Fprintf(w, "")
+		return
+	}
+
+	remainTicket, totalUncon := ticket.GetRemainTicket(currentRound)
 	remainData := ticket.TicketRemain{
 		Seats: remainTicket,
 		UnconfimedTicketsCount: totalUncon,
@@ -178,6 +185,28 @@ func RemainHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, string(b))
 }
 
+// InitHandler is API for inital ticket for first round
+func InitHandler(w http.ResponseWriter, r *http.Request) {
+	initalTicket.InitTicket(1)
+	fmt.Fprintf(w, "DONE")
+}
+
+// AllTicketHandler is API for get all ticket
+func AllTicketHandler(w http.ResponseWriter, r *http.Request) {
+	tickets := ticket.GetAllTicket()
+	response := ResponseWithAllTicket{
+		Success: true,
+		Seats:   tickets,
+	}
+	b, err := json.Marshal(&response)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, string(b))
+
+}
 func main() {
 	fmt.Println("hello world")
 	r := mux.NewRouter().StrictSlash(true)
@@ -185,6 +214,8 @@ func main() {
 	r.HandleFunc("/remaining", RemainHandler).Methods("GET")
 	r.HandleFunc("/book", BookHandler).Methods("POST")
 	r.HandleFunc("/confirm", ConfirmHandler).Methods("POST")
+	r.HandleFunc("/init", InitHandler).Methods("GET")
+	r.HandleFunc("/all", AllTicketHandler).Methods("GET")
 	srv := &http.Server{
 		Handler: r,
 		Addr:    "127.0.0.1:8000",

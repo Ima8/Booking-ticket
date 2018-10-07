@@ -11,8 +11,8 @@ go run intalTicket/cmd/main.go // run this for inital ticket for testing
 current_round : string
  -- i.e. "1"
 r_{round}:{Seat} 
- -- The available seat .
-r_{round}_u:{Seat} 
+ -- The available seat may have or haven't booked
+ru_{round}:{Seat} 
  -- The booked seat but didn't confirm yet.
 
 ```
