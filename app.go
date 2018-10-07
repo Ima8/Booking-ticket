@@ -64,6 +64,7 @@ func BookHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println(p.Seat)
+	ticket.BookTicket(p.Seat)
 	fmt.Fprintf(w, "URL.Path = %q\n", r.URL.Path)
 }
 

@@ -2,6 +2,7 @@ package ticket
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -51,8 +52,32 @@ func GetRemainTicket(round int) ([]string, int) {
 
 }
 
-func IsTicketFinish(round int) bool {
-	var isFinish = true
+func BookTicket(seat string) bool {
+	clientRedis, _ = redisConnector.GetConnection(0)
+	//
+	IsTicketAvailable(seat)
+	return false
+}
 
-	return isFinish
+func GetCurrentRound() int {
+	clientRedis, _ = redisConnector.GetConnection(0)
+	round, _ := clientRedis.Get("current_round").Result()
+	var currentRound int
+	if len(round) >= 1 {
+		currentRound, _ = strconv.Atoi(round)
+	}
+	return (currentRound)
+}
+func IsTicketAvailable(s string) bool {
+	clientRedis, _ = redisConnector.GetConnection(0)
+	currentRound := GetCurrentRound()
+	if currentRound == 0 {
+		return false
+	}
+	_, err := clientRedis.Get("r_1" + strconv.Itoa(currentRound) + ":" + s).Result()
+	if err != nil {
+		log.Printf("Seat %s, Round %d:Not found", s, currentRound)
+		return false
+	}
+	return true
 }
