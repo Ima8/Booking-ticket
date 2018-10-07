@@ -6,6 +6,15 @@ docker-compose up -d
 go run intalTicket/cmd/main.go // run this for inital ticket for testing
 ```
 
+## Format Data 
+```
+r_{round}:{Seat} 
+ -- The available seat .
+r_{round}_u:{Seat} 
+ -- The booked seat but didn't confirm yet.
+
+```
+
 ## Main function
 - POST: Book the seat  
   - PATH
@@ -51,3 +60,12 @@ go run intalTicket/cmd/main.go // run this for inital ticket for testing
     - status 200
     - Field
       - bookings: string[]  (list of all booking)
+
+
+## TODO
+- Inital ticket  {DONE}
+- Get remain ticket {DONE}
+- Book seat 
+- Confirm Seat
+- Cancel Seat
+- Add test for all
