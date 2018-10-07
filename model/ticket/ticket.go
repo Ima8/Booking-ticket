@@ -80,6 +80,7 @@ func ConfirmTicket(seat string) bool {
 		status, err := clientRedis.RenameNX("r_"+strconv.Itoa(currentRound)+":"+seat, "b_"+strconv.Itoa(currentRound)+":"+seat).Result()
 		if status == true && err == nil {
 			clientRedis.Del("ru_" + strconv.Itoa(currentRound) + ":" + seat)
+			log.Println(isRoundFull(currentRound))
 			// Check is it still have ticket left if not init the new round
 			if isRoundFull(currentRound) {
 				initalTicket.InitTicket(currentRound + 1)

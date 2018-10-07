@@ -74,5 +74,11 @@ ru_{round}:{Seat}
 - Add test for all
 
 
+## How to test
+1. docker-compose up
+2. go run app.go
+3. Call api at /init
+4. go run runner/app.go
+
 ## Use case
 - 1. If all ticket booked but didn't confirm yet not allow to book in the next round
