@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-redis/redis"
 	redisConnector "github.com/ima8/booking-ticket/model/redis"
@@ -31,7 +32,7 @@ func GetRemainTicket(round int) ([]string, int) {
 	var keys []string
 
 	// Get all key that booked but didn't confirm yet
-	if keys, _, err = clientRedis.Scan(0, "r_"+strconv.Itoa(round)+"_u:*", 1000).Result(); err != nil {
+	if keys, _, err = clientRedis.Scan(0, "ru_"+strconv.Itoa(round)+":*", 1000).Result(); err != nil {
 		fmt.Println("ERROR: %s", err)
 		os.Exit(2)
 	}
@@ -62,16 +63,25 @@ func BookTicket(seat string) bool {
 	}
 	canBookTicket := isTicketAvailable(currentRound, seat)
 	if canBookTicket == true {
-		status, err := clientRedis.RenameNX("r_"+strconv.Itoa(currentRound)+":"+seat, "r_"+strconv.Itoa(currentRound)+"_u:"+seat).Result()
-		if status == false || err != nil {
+		//status, err := clientRedis.RenameNX("r_"+strconv.Itoa(currentRound)+":"+seat, "ru_"+strconv.Itoa(currentRound)+":"+seat).Result()
+		_, err := clientRedis.Set("ru_"+strconv.Itoa(currentRound)+":"+seat, "", 10*time.Second).Result()
+		if err != nil {
 			return false
 		} else {
 			log.Println("Booked: " + seat)
+			// Check is it still have ticket left if not init the new round
 			return true
 		}
 	}
 	return false
 
+}
+
+// isRoundAvailable mean all ticket already booked, may have some not confirm yet
+func isRoundAvailable(round int) bool {
+	// clientRedis, _ = redisConnector.GetConnection(0)
+	// client
+	return false
 }
 
 func getCurrentRound() int {
@@ -86,12 +96,13 @@ func getCurrentRound() int {
 
 func isTicketAvailable(currentRound int, s string) bool {
 	clientRedis, _ = redisConnector.GetConnection(0)
-	status, err := clientRedis.Exists("r_" + strconv.Itoa(currentRound) + ":" + s).Result()
-	if status == 0 || err != nil {
+	isAvailable, err := clientRedis.Exists("r_" + strconv.Itoa(currentRound) + ":" + s).Result()
+	isBooked, err2 := clientRedis.Exists("ru_" + strconv.Itoa(currentRound) + ":" + s).Result()
+	if isAvailable == 1 || err != nil || isBooked == 0 || err2 != nil {
 		log.Printf("Seat %s, Round %d:Not found", s, currentRound)
 		return false
 	}
-	if status == 1 {
+	if isAvailable == 1 && isBooked == 0 {
 		return true
 	}
 	return false
