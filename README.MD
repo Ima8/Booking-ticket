@@ -67,8 +67,9 @@ ru_{round}:{Seat}
 ## TODO
 - Inital ticket  {DONE}
 - Get remain ticket {DONE}
-- Book seat 
-- Confirm Seat
+- Book seat  {DONE}
+- Confirm Seat {DONE}
+- Get all ticket {DONE}
 - Cancel Seat
 - Add test for all
 
